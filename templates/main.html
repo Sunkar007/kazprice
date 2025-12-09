@@ -1,0 +1,211 @@
+{% extends 'base.html' %}
+
+{% block title %}KazPrice — Басты бет{% endblock %}
+
+{% block content %}
+  <!-- Banner carousel -->
+  <div id="mainCarousel" class="carousel slide mb-4" data-bs-ride="carousel">
+    <div class="carousel-inner">
+      <div class="carousel-item active">
+        <img src="{{ url_for('static', filename='img/iphone17blue.jpg') }}" class="d-block mx-auto rounded" alt="banner">
+      </div>
+      <div class="carousel-item">
+        <img src="{{ url_for('static', filename='img/iphone17or.jpeg') }}" class="d-block mx-auto rounded" alt="banner-2">
+      </div>
+    </div>
+    <button class="carousel-control-prev" type="button" data-bs-target="#mainCarousel" data-bs-slide="prev">
+      <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+      <span class="visually-hidden">Previous</span>
+    </button>
+    <button class="carousel-control-next" type="button" data-bs-target="#mainCarousel" data-bs-slide="next">
+      <span class="carousel-control-next-icon" aria-hidden="true"></span>
+      <span class="visually-hidden">Next</span>
+    </button>
+  </div>
+
+  <!-- Products grid -->
+  <section class="products">
+    <h2>Сізге арналған ұсыныстар</h2>
+        <div class="products-grid">
+            {% for p in products %}
+            <article class="product-card" data-product-id="{{ p.get('id') }}">
+        {% set img_raw = p.get('image_url') %}
+        {% if img_raw %}
+          {% set img_file = img_raw.split('/')[-1] %}
+        {% else %}
+          {% set img_file = 'logo.jpg' %}
+        {% endif %}
+
+                <div class="product-media">
+                    <img src="{{ url_for('static', filename='img/' ~ img_file) }}" alt="{{ p.get('name') }}" class="product-img">
+
+                    {# Favorite button (absolute overlay) #}
+                    <button class="fav-btn" data-fav-btn data-product-id="{{ p.get('id') }}" data-favorite-state="{% if p.get('id') in favorites %}true{% else %}false{% endif %}" aria-label="toggle favorite" aria-pressed="{% if p.get('id') in favorites %}true{% else %}false{% endif %}">
+                        <span class="fav-icon {% if p.get('id') in favorites %}fav-on{% endif %}">❤</span>
+                    </button>
+                </div>
+                <div class="product-body">
+            {% set brand = p.get('brand','') %}
+            {% if not brand and 'iPhone' in p.get('name','') %}
+              {% set brand = 'apple' %}
+            {% endif %}
+            {% if brand %}
+              {% set brand_logo = ('img/' ~ brand ~ 'Logo.png') %}
+              <img src="{{ url_for('static', filename=brand_logo) }}" alt="{{ brand }}" class="brand-logo">
+            {% endif %}
+
+            <h3 class="product-title">{{ p.get('name') }}</h3>
+            <p class="product-meta">{{ p.get('color','') }} • {{ p.get('storage','') }}</p>
+            <p class="product-price">{{ '{:,.0f}'.format(p.get('price',0)) }} ₸</p>
+            <p class="product-store text-muted small mb-2">{{ p.get('store_name') if p.get('store_name') else ( 'Kaspi.kz' if loop.index==1 else ( 'Sulpak' if loop.index==2 else 'Tech Store')) }}</p>
+                        <div class="mt-auto d-grid gap-2">
+                            <button data-addcart-btn data-product-id="{{ p.get('id') }}" class="btn-primary" type="button">Себетке қосу</button>
+                            <a href="/product/{{ p.get('id') }}" class="btn-secondary text-center">Толығырақ</a>
+                        </div>
+          </div>
+        
+      </article>
+      {% endfor %}
+    </div>
+  </section>
+
+{% endblock %}
+<!DOCTYPE html>
+<html lang="kk">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>KazPrice — Сізге арналған ұсыныстар</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}">
+</head>
+<body>
+    <header class="site-header">
+        <div class="container header-inner">
+            <a class="brand" href="/">
+                <img src="{{ url_for('static', filename='img/logo2.jpg') }}" alt="KazPrice" class="brand-logo">
+                <span class="brand-text">KazPrice</span>
+            </a>
+
+            <form action="/search" method="get" class="search">
+                <label for="q" class="sr-only">Іздеу</label>
+                <input id="q" name="q" type="search" placeholder="Іздеу..." aria-label="Іздеу">
+                <button type="submit" class="search-btn">🔍</button>
+            </form>
+        </div>
+    </header>
+
+    <main>
+        <div class="container">
+            <!-- Companies / Brands -->
+            <section class="companies" aria-labelledby="companies-title">
+                <h2 id="companies-title">Компаниялар</h2>
+                <div class="brands-grid" role="list">
+                    <div class="brand-badge" role="listitem">Apple</div>
+                    <div class="brand-badge" role="listitem">Samsung</div>
+                    <div class="brand-badge" role="listitem">Xiaomi</div>
+                    <div class="brand-badge" role="listitem">Lenovo</div>
+                    <div class="brand-badge" role="listitem">Acer</div>
+                </div>
+            </section>
+
+            <section class="products" aria-labelledby="products-title">
+                <h2 id="products-title">Сізге арналған ұсыныстар</h2>
+                <div class="products-grid">
+                    {% for p in products %}
+                    <article class="product-card" data-product-id="{{ p.get('id') }}">
+                        {# Handle multiple possible formats stored in DB:
+                           - plain filename: "iphone17blue.jpg"
+                           - prefixed with "img/" or "static/img/"
+                           - absolute filesystem path: "/Users/.../static/img/iphone17blue.jpg"
+                           - full URL: "https://..."
+                        #}
+                        {% set img_raw = p.get('image_url') %}
+                        {% set img_url = None %}
+                        {% if not img_raw %}
+                            {% set img_filename = 'logo.jpg' %}
+                        {% else %}
+                            {# if it's an external URL, use as-is #}
+                            {% if img_raw.startswith('http') %}
+                                {% set img_url = img_raw %}
+                            {% else %}
+                                {# extract the base filename if a path was stored #}
+                                {% set img_filename = img_raw.split('/')[-1] %}
+                            {% endif %}
+                        {% endif %}
+
+                        <a class="product-link" href="/product/{{ p['id'] if p.get('id') else '' }}"> 
+                            <div class="product-media">
+                                {% if img_url %}
+                                    <img src="{{ img_url }}" alt="{{ p['name'] }}" loading="lazy" class="product-img">
+                                {% else %}
+                                    <img src="{{ url_for('static', filename=('img/' ~ img_filename)) }}" alt="{{ p['name'] }}" loading="lazy" class="product-img">
+                                {% endif %}
+                            </div>
+                            <div class="product-body">
+                                {# Determine brand logo based on product name or brand field #}
+                                {% set brand = p.get('brand', '') %}
+                                {% if not brand and 'iPhone' in p['name'] %}
+                                    {% set brand = 'Apple' %}
+                                {% elif not brand and 'Galaxy' in p['name'] %}
+                                    {% set brand = 'Samsung' %}
+                                {% endif %}
+                                
+                                {% if brand %}
+                                    {% set brand_logo = 'img/' ~ brand ~ 'Logo.png' %}
+                                    <img src="{{ url_for('static', filename=brand_logo) }}" alt="{{ brand }}" class="brand-logo" loading="lazy">
+                                {% endif %}
+                                
+                                <h3 class="product-title">{{ p['name'] }}</h3>
+                                <p class="product-meta">{{ p['color'] }} • {{ p['storage'] }}</p>
+                                <p class="product-price">{{ '{:,.0f}'.format(p['price']) if p.get('price') else '—' }} ₸</p>
+                                <p class="product-store">
+                                    {% if p.get('store_name') %}
+                                        {{ p['store_name'] }}
+                                    {% else %}
+                                        {% if loop.index == 1 %}
+                                            Kaspi.kz
+                                        {% elif loop.index == 2 %}
+                                            Sulpak
+                                        {% else %}
+                                            Tech Store
+                                        {% endif %}
+                                    {% endif %}
+                                </p>
+
+                                {# Show store logo based on store name #}
+                                {% set store_logo = 'img/logo.jpg' %}
+                                {% if p.get('store_name') == 'Kaspi.kz' or (not p.get('store_name') and loop.index == 1) %}
+                                    {% set store_logo = 'img/kaspi.png' %}
+                                {% elif p.get('store_name') == 'Sulpak' or (not p.get('store_name') and loop.index == 2) %}
+                                    {% set store_logo = 'img/sulpak.png' %}
+                                {% endif %}
+                                <img src="{{ url_for('static', filename=store_logo) }}" alt="Store logo" class="store-logo" loading="lazy">
+                            </div>
+                        </a>
+                    </article>
+                    {% endfor %}
+                </div>
+            </section>
+        </div>
+    </main>
+
+    <footer class="site-footer">
+        <div class="container footer-inner">
+            <small>© {{ current_year if current_year else '' }} KazPrice — Барлық құқықтар қорғалған</small>
+            <nav class="footer-nav" aria-label="Төменгі навигация">
+                <a href="/main">Басты бет</a>
+                <a href="/catalog">Каталог</a>
+                <a href="/cart">Себет</a>
+            </nav>
+        </div>
+    </footer>
+
+    <nav class="bottom-nav" aria-hidden="false">
+        <a href="/main" class="nav-item">🏠<span>Басты</span></a>
+        <a href="/catalog" class="nav-item">📚<span>Каталог</span></a>
+        <a href="/lists" class="nav-item">❤️<span>Тізім</span></a>
+        <a href="/profile" class="nav-item">👤<span>Профиль</span></a>
+        <a href="/cart" class="nav-item">🛒<span>Себет</span></a>
+    </nav>
+</body>
+</html>

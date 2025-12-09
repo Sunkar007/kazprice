@@ -1,0 +1,29 @@
+{% extends 'base.html' %}
+
+{% block title %}Таңдаулылар — KazPrice{% endblock %}
+
+{% block content %}
+  <div class="py-4">
+    <h2>Таңдаулылар</h2>
+    {% if not products %}
+      <div class="form-card mt-3">Сізде таңдалған тауарлар жоқ.</div>
+    {% else %}
+      <div class="products-grid mt-3" id="favoritesGrid">
+        {% for p in products %}
+          <article class="product-card" data-product-id="{{ p.get('id') }}">
+            {% set img_file = p.get('image_url','logo.jpg').split('/')[-1] %}
+            <div class="product-media"><img src="{{ url_for('static', filename='img/' ~ img_file) }}" class="product-img"></div>
+            <div class="product-body">
+              <h3 class="product-title">{{ p.get('name') }}</h3>
+              <p class="product-price">{{ '{:,.0f}'.format(p.get('price',0)) }} ₸</p>
+                <div class="d-flex gap-2 mt-2">
+                <button data-addcart-btn data-product-id="{{ p.get('id') }}" class="btn-primary">Себетке қосу</button>
+                <button data-remove-fav data-product-id="{{ p.get('id') }}" class="btn-secondary">Жою</button>
+              </div>
+            </div>
+          </article>
+        {% endfor %}
+      </div>
+    {% endif %}
+  </div>
+{% endblock %}

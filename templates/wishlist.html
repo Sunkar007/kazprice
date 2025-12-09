@@ -1,0 +1,30 @@
+{% extends 'base.html' %}
+
+{% block title %}Тізім — KazPrice{% endblock %}
+
+{% block content %}
+  <h4>Тізім</h4>
+  <div class="row g-3">
+    {% for p in wishlist %}
+    <div class="col-12 col-md-6 col-lg-4">
+      <div class="card product-card h-100">
+        <div class="row g-0">
+          <div class="col-4">
+            <img src="{{ url_for('static', filename='img/' ~ (p.get('image_url','logo.jpg').split('/')[-1])) }}" class="img-fluid rounded-start" alt="">
+          </div>
+          <div class="col-8">
+            <div class="card-body d-flex flex-column">
+              <h6 class="card-title">{{ p.get('name') }}</h6>
+              <p class="small text-muted">{{ '{:,.0f}'.format(p.get('price',0)) }} ₸</p>
+              <div class="mt-auto d-flex gap-2">
+                <button class="btn btn-sm btn-primary">Себетке</button>
+                <button class="btn btn-sm btn-outline-secondary">Жою</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+{% endblock %}

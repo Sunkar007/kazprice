@@ -1,0 +1,97 @@
+{% extends 'base.html' %}
+
+{% block title %}Төлеуге өту — KazPrice{% endblock %}
+
+{% block content %}
+  <div class="py-4">
+    <div class="container">
+      <h3 class="mb-4">Төлеуге өту</h3>
+
+      <div class="row">
+        <div class="col-12 col-lg-8">
+          <!-- Order Summary -->
+          <div class="card p-4 mb-4">
+            <h5 class="mb-3">Тауарлар</h5>
+            <div class="table-responsive">
+              <table class="table table-sm align-middle">
+                <thead>
+                  <tr>
+                    <th>Өнім</th>
+                    <th>Саны</th>
+                    <th>Баға</th>
+                    <th>Жалпы</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {% for item in products %}
+                  {% set subtotal = (item.get('price',0) or 0) * (item.get('quantity',1) or 1) %}
+                  <tr>
+                    <td>{{ item.get('name') }}</td>
+                    <td>{{ item.get('quantity', 1) }}</td>
+                    <td>{{ '{:,.0f}'.format(item.get('price',0)) }} ₸</td>
+                    <td><strong>{{ '{:,.0f}'.format(subtotal) }} ₸</strong></td>
+                  </tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- Delivery Info -->
+          <div class="card p-4 mb-4">
+            <h5 class="mb-3">Жеткізу</h5>
+            <div class="form-check mb-3">
+              <input class="form-check-input" type="radio" name="delivery" id="delivery_standard" value="standard" checked>
+              <label class="form-check-label" for="delivery_standard">
+                Стандартты жеткізу — <strong class="text-success">{{ '{:,.0f}'.format(delivery_cost) }} ₸</strong>
+              </label>
+            </div>
+            <small class="text-muted">Жеткізу уақыты: 2-3 күн</small>
+          </div>
+
+          <!-- Delivery Address -->
+          <div class="card p-4 mb-4">
+            <h5 class="mb-3">Жеткізу мекенжайы</h5>
+            <p class="mb-0 text-muted">Сіздің профильде тіркелген мекенжай:</p>
+            <p class="mb-0"><strong id="deliveryAddress">Мекенжай жүктелуде...</strong></p>
+            <a href="{{ url_for('edit_profile') }}" class="btn btn-sm btn-outline-secondary mt-2">Өзгерту</a>
+          </div>
+        </div>
+
+        <!-- Order Total & Proceed -->
+        <aside class="col-12 col-lg-4">
+          <div class="card p-4 sticky-top" style="top: 20px;">
+            <h5>Төлем бұлтері</h5>
+            <hr>
+            <div class="d-flex justify-content-between mb-2">
+              <span>Өндіктер қосынды:</span>
+              <span id="subtotal">{{ '{:,.0f}'.format(cart_total) }}</span> ₸
+            </div>
+            <div class="d-flex justify-content-between mb-3 pb-3 border-bottom">
+              <span>Жеткізу:</span>
+              <span id="deliveryAmount">{{ '{:,.0f}'.format(delivery_cost) }}</span> ₸
+            </div>
+            <div class="d-flex justify-content-between mb-4">
+              <h5 class="mb-0">Барлығы:</h5>
+              <h5 class="mb-0" id="totalAmount">{{ '{:,.0f}'.format(cart_total + delivery_cost) }}</h5> 
+              <span> ₸</span>
+            </div>
+            <div class="d-grid gap-2">
+              <a href="{{ url_for('payment') }}" class="btn btn-primary btn-lg">Төлем жасауға өту</a>
+              <a href="{{ url_for('cart_view') }}" class="btn btn-outline-secondary">Себетке қайту</a>
+            </div>
+          </div>
+        </aside>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Load delivery address from profile (optional)
+    document.addEventListener('DOMContentLoaded', function(){
+      const addressEl = document.getElementById('deliveryAddress');
+      // For now, we'll just show a placeholder; you can fetch from /profile API if desired
+      addressEl.textContent = 'Профильде сохранен адрес';
+    });
+  </script>
+{% endblock %}

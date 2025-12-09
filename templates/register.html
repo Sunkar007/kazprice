@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="kk">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>KazPrice — Тіркелу</title>
+<style>
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background: #f6f7fb;
+  font-family: Arial, sans-serif;
+  height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  overflow-x: hidden;
+}
+
+.container {
+  width: 100%;
+  max-width: 420px;
+  background: #fff;
+  padding: 40px 35px;
+  margin: 0 20px;
+  border-radius: 15px;
+  box-shadow: 0 4px 25px rgba(0,0,0,0.08);
+}
+
+h2 {
+  font-size: 26px;
+  font-weight: 700;
+  margin-bottom: 25px;
+}
+
+input {
+  width: 100%;
+  padding: 12px 14px;
+  margin: 10px 0;
+  border: 1px solid #ccc;
+  border-radius: 10px;
+  font-size: 15px;
+}
+
+button {
+  width: 100%;
+  padding: 12px;
+  background: #730707;
+  color: white;
+  border: none;
+  border-radius: 10px;
+  font-size: 16px;
+  cursor: pointer;
+  transition: background 0.25s;
+}
+
+button:hover {
+  background: #730707;
+}
+
+p {
+  margin-top: 20px;
+  text-align: center;
+  font-size: 15px;
+}
+
+a {
+  color: #730707;
+  text-decoration: none;
+}
+
+a:hover {
+  text-decoration: underline;
+}
+</style>
+</head>
+<body>
+  <div class="container">
+    <h2>Тіркелу</h2>
+    <form method="POST">
+      <input name="name" placeholder="Аты-жөні" required>
+      <input name="email" type="email" placeholder="Почта" required>
+      <input name="password" type="password" placeholder="Құпия сөз" required>
+      <button type="submit">Тіркелу</button>
+    </form>
+    <p>Аккаунтың бар ма? <a href="/login">Кіру</a></p>
+  </div>
+</body>
+</html>

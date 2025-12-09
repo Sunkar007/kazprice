@@ -1,0 +1,29 @@
+{% extends 'base.html' %}
+
+{% block title %}Форма мысалы — KazPrice{% endblock %}
+
+{% block content %}
+  <div class="py-4">
+    <div class="form-card" style="max-width:720px; margin:0 auto;">
+      <h2 class="mb-3">Байланыс формасы</h2>
+      <form method="POST" action="{{ url_for('demo_form') }}">
+        <div class="form-field">
+          <label for="name">Атыңыз</label>
+          <input id="name" name="name" type="text" placeholder="Аты-жөніңіз" value="{{ request.form.get('name','') }}">
+        </div>
+
+        <div class="form-field">
+          <label for="email">Почта</label>
+          <input id="email" name="email" type="email" placeholder="example@mail.com" value="{{ request.form.get('email','') }}">
+        </div>
+
+        <div class="form-field">
+          <label for="message">Хабарлама</label>
+          <textarea id="message" name="message" rows="4" placeholder="Хабарлама...">{{ request.form.get('message','') }}</textarea>
+        </div>
+
+        <button class="btn-primary" type="submit">Жіберу</button>
+      </form>
+    </div>
+  </div>
+{% endblock %}

@@ -1,0 +1,78 @@
+{% extends 'base.html' %}
+
+{% block title %}Себет — KazPrice{% endblock %}
+
+{% block content %}
+  {# Support both `products` (used by some routes) and `cart_items` (alternate name).
+     Prefer `cart_items` if present, else fall back to `products`.
+  #}
+  {% set items = cart_items if (cart_items is defined) else (products if (products is defined) else []) %}
+
+  {% if not items %}
+    <div class="py-4">
+      <div class="form-card mt-3">Себет бос.</div>
+    </div>
+  {% else %}
+    {# compute totals #}
+    {% set grand = 0 %}
+    {% for it in items %}
+      {% set qty = it.get('quantity', 1) or 1 %}
+      {% set price = it.get('price', 0) or 0 %}
+      {% set grand = grand + (qty * price) %}
+    {% endfor %}
+
+    <div class="row py-4">
+      <div class="col-12 col-lg-8">
+        <h4>Себет</h4>
+        <div class="table-responsive">
+          <table class="table align-middle">
+            <thead>
+              <tr>
+                <th></th>
+                <th>Өнім</th>
+                <th>Саны</th>
+                <th>Баға</th>
+                <th>Жалпы</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody id="cartItems">
+              {% for item in items %}
+              {% set subtotal = (item.get('price',0) or 0) * (item.get('quantity',1) or 1) %}
+              <tr data-product-id="{{ item.get('id') }}">
+                <td style="width:120px"><img src="{{ url_for('static', filename='img/' ~ (item.get('image_url','logo.jpg').split('/')[-1])) }}" class="img-fluid rounded" alt=""></td>
+                <td>{{ item.get('name') }}</td>
+                <td>
+                  <div class="d-flex align-items-center qty-control" style="gap:6px;">
+                    <button data-qty-decr data-product-id="{{ item.get('id') }}" class="btn btn-outline-secondary btn-sm">−</button>
+                    <input type="number" data-qty-input data-product-id="{{ item.get('id') }}" value="{{ item.get('quantity',1) }}" class="form-control" style="width:90px" min="0">
+                    <button data-qty-incr data-product-id="{{ item.get('id') }}" class="btn btn-outline-secondary btn-sm">＋</button>
+                  </div>
+                </td>
+                <td>{{ '{:,.0f}'.format(item.get('price',0)) }} ₸</td>
+                <td><span class="item-total" data-item-total-id="{{ item.get('id') }}">{{ '{:,.0f}'.format(subtotal) }}</span> ₸</td>
+                <td style="width:70px;">
+                  <button data-remove-cart data-product-id="{{ item.get('id') }}" class="btn btn-outline-danger btn-sm" title="Сілтемені өшіру">✕</button>
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+        <a href="/catalog" class="btn btn-outline-secondary">Шоппинг жалғастыру</a>
+      </div>
+
+      <aside class="col-12 col-lg-4">
+        <div class="card p-3">
+          <h5>Соңғы төлем</h5>
+          <p class="h4"><span id="cartTotal">{{ '{:,.0f}'.format(grand) }}</span> ₸</p>
+          <div class="d-grid gap-2">
+            <button id="clearCartBtn" class="btn btn-secondary">Босату</button>
+            <a href="{{ url_for('checkout') }}" class="btn btn-primary w-100">Төлеуге өту</a>
+          </div>
+        </div>
+      </aside>
+    </div>
+  {% endif %}
+
+{% endblock %}

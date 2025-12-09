@@ -1,0 +1,168 @@
+{% extends 'base.html' %}
+
+{% block title %}Төлем — KazPrice{% endblock %}
+
+{% block content %}
+  <div class="py-4">
+    <div class="container">
+      <h3 class="mb-4">Төлем әдісін таңдаңыз</h3>
+
+      <div class="row">
+        <div class="col-12 col-lg-8">
+          <!-- Payment Methods -->
+          <div class="card p-4 mb-4">
+            <h5 class="mb-4">Сохранённые карты</h5>
+            
+            {% if cards %}
+              <form id="paymentForm">
+                {% for card in cards %}
+                <div class="card mb-3 p-3 border-2" id="card-{{ card.id }}">
+                  <div class="form-check">
+                    <input class="form-check-input" type="radio" name="card_id" id="card_{{ card.id }}" 
+                           value="{{ card.id }}" {% if loop.first %}checked{% endif %} 
+                           data-balance="{{ card.balance }}">
+                    <label class="form-check-label w-100" for="card_{{ card.id }}">
+                      <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                          <strong>{{ card.card_name }}</strong>
+                          <div class="text-muted small">Қолданылуы мүмкін: <span class="text-success">{{ '{:,.0f}'.format(card.balance) }}</span> ₸</div>
+                        </div>
+                      </div>
+                    </label>
+                  </div>
+                </div>
+                {% endfor %}
+              </form>
+            {% else %}
+              <div class="alert alert-warning" role="alert">
+                Сохраненных карт нет. <a href="{{ url_for('profile') }}">Картаны қосу</a>
+              </div>
+            {% endif %}
+          </div>
+
+          <!-- Payment Info -->
+          <div class="card p-4 mb-4 bg-light">
+            <h5 class="mb-3">Платёж детали</h5>
+            <div class="d-flex justify-content-between mb-2">
+              <span>Товары:</span>
+              <span id="paymentSubtotal">{{ '{:,.0f}'.format(cart_total) }}</span> ₸
+            </div>
+            <div class="d-flex justify-content-between mb-3 pb-3 border-bottom">
+              <span>Доставка:</span>
+              <span id="paymentDelivery">{{ '{:,.0f}'.format(delivery_cost) }}</span> ₸
+            </div>
+            <div class="d-flex justify-content-between">
+              <h5 class="mb-0">Итого к оплате:</h5>
+              <h5 class="mb-0"><span id="paymentTotal">{{ '{:,.0f}'.format(total_amount) }}</span> ₸</h5>
+            </div>
+          </div>
+        </div>
+
+        <!-- Order Summary & Pay Button -->
+        <aside class="col-12 col-lg-4">
+          <div class="card p-4 sticky-top" style="top: 20px;">
+            <h5 class="mb-4">Резюме заказа</h5>
+            
+            <div class="mb-3">
+              <small class="text-muted d-block mb-2">Выбранная карта:</small>
+              <span id="selectedCard" class="badge bg-primary">Выберите карту</span>
+            </div>
+
+            <div class="alert alert-info small" id="balanceWarning" style="display:none;">
+              ⚠️ На выбранной карте недостаточно средств
+            </div>
+
+            <div class="d-grid gap-2">
+              <button id="payButton" class="btn btn-success btn-lg" disabled>
+                <span id="payButtonText">Төлеу</span>
+              </button>
+              <a href="{{ url_for('checkout') }}" class="btn btn-outline-secondary">Артқа</a>
+            </div>
+
+            <small class="text-muted mt-3 d-block">
+              Төлем құрылымы арқылы өңделеді. Сіздің картасы көрсетілген.
+            </small>
+          </div>
+        </aside>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const totalAmount = {{ total_amount }};
+    const payForm = document.getElementById('paymentForm');
+    const payButton = document.getElementById('payButton');
+    const selectedCardSpan = document.getElementById('selectedCard');
+    const balanceWarning = document.getElementById('balanceWarning');
+
+    // Handle card selection
+    if(payForm){
+      const cardInputs = payForm.querySelectorAll('input[name="card_id"]');
+      cardInputs.forEach(inp => {
+        inp.addEventListener('change', function(){
+          const balance = parseInt(this.dataset.balance, 10);
+          const cardId = this.value;
+          const cardName = this.closest('.card').querySelector('strong').textContent;
+          
+          selectedCardSpan.textContent = cardName;
+          
+          // Check balance
+          if(balance < totalAmount){
+            balanceWarning.style.display = 'block';
+            payButton.disabled = true;
+          } else {
+            balanceWarning.style.display = 'none';
+            payButton.disabled = false;
+          }
+        });
+      });
+
+      // Trigger initial check
+      const checkedCard = payForm.querySelector('input[name="card_id"]:checked');
+      if(checkedCard){
+        checkedCard.dispatchEvent(new Event('change'));
+      }
+    }
+
+    // Handle payment submission
+    payButton.addEventListener('click', function(e){
+      e.preventDefault();
+      
+      const selectedCardInput = payForm.querySelector('input[name="card_id"]:checked');
+      if(!selectedCardInput){
+        alert('Картасын таңдаңыз');
+        return;
+      }
+
+      const cardId = selectedCardInput.value;
+      payButton.disabled = true;
+      const originalText = payButton.querySelector('#payButtonText').textContent;
+      payButton.querySelector('#payButtonText').textContent = 'Өңделуде...';
+
+      fetch('/process_payment', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({card_id: cardId})
+      })
+      .then(r => r.json())
+      .then(data => {
+        if(data.status === 'success'){
+          // Show success and redirect
+          alert(data.message);
+          window.location.href = '{{ url_for("main") }}';
+        } else {
+          // Show error
+          alert('Қате: ' + (data.message || 'Төлем сәтсіз'));
+          payButton.disabled = false;
+          payButton.querySelector('#payButtonText').textContent = originalText;
+        }
+      })
+      .catch(err => {
+        console.error(err);
+        alert('Төлем сәтсіз');
+        payButton.disabled = false;
+        payButton.querySelector('#payButtonText').textContent = originalText;
+      });
+    });
+  </script>
+{% endblock %}
