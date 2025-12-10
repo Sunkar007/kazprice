@@ -40,7 +40,7 @@
                     <img src="{{ url_for('static', filename='img/' ~ img_file) }}" alt="{{ p.get('name') }}" class="product-img">
 
                     {# Favorite button (absolute overlay) #}
-                    <button class="fav-btn" data-fav-btn data-product-id="{{ p.get('id') }}" data-favorite-state="{% if p.get('id') in favorites %}true{% else %}false{% endif %}" aria-label="toggle favorite" aria-pressed="{% if p.get('id') in favorites %}true{% else %}false{% endif %}">
+                    <button class="fav-btn favorite-btn" data-fav-btn data-product-id="{{ p.get('id') }}" data-favorite-state="{% if p.get('id') in favorites %}true{% else %}false{% endif %}" aria-label="toggle favorite" aria-pressed="{% if p.get('id') in favorites %}true{% else %}false{% endif %}">
                         <span class="fav-icon {% if p.get('id') in favorites %}fav-on{% endif %}">❤</span>
                     </button>
                 </div>

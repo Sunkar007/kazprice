@@ -76,9 +76,17 @@ input[type=number] { appearance: textfield; -moz-appearance: textfield; }
 
 /* Favorite heart styles */
 .fav-btn{ background:transparent; border:none; padding:6px; border-radius:8px; cursor:pointer; display:inline-flex; align-items:center; justify-content:center }
-.fav-icon{ display:inline-block; width:22px; height:22px; line-height:22px; font-size:18px; color:rgba(0,0,0,0.14); transition:color .15s ease, transform .12s ease, text-shadow .12s ease }
-.fav-icon.fav-on{ color:#e11; transform:scale(1.05); text-shadow:0 4px 10px rgba(225,17,17,0.12) }
-.fav-btn:focus{ outline:2px solid rgba(122,0,38,0.12); outline-offset:2px }
+
+/* New: alternative class for absolute-positioned favorite button
+  Use `favorite-btn` when you want the heart overlaid at the
+  top-right of a product card while keeping `data-fav-btn`
+  attribute untouched so existing JS still works. */
+.favorite-btn{ position:absolute; top:10px; right:10px; z-index:4; padding:8px; background:rgba(255,255,255,0.86); box-shadow:0 6px 18px rgba(12,20,30,0.06); border-radius:10px; display:inline-flex; align-items:center; justify-content:center }
+.favorite-btn:hover{ transform:translateY(-1px); }
+
+.fav-icon{ display:inline-block; width:24px; height:24px; line-height:24px; font-size:20px; color:rgba(0,0,0,0.16); transition:color .15s ease, transform .12s ease, text-shadow .12s ease }
+.fav-icon.fav-on{ color:#e11; transform:scale(1.08); text-shadow:0 6px 18px rgba(225,17,17,0.12) }
+.fav-btn:focus, .favorite-btn:focus{ outline:2px solid rgba(122,0,38,0.12); outline-offset:2px }
 
 /* small helper when toggled quickly */
 .fav-icon.pulse{ transform:scale(1.15); transition:transform .18s ease }
