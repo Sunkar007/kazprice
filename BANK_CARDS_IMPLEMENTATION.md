@@ -135,7 +135,7 @@ def payment():
 ## 3. Templates
 
 ### `profile.html` (Updated)
-Added new "Банк карттар" (Bank Cards) section with:
+Added new "Банк карт" (Bank Cards) section with:
 - List of user's saved cards (name, masked number, balance)
 - "Карта қосу" (Add Card) button linking to `/add_card`
 - Existing profile controls preserved (Edit Profile, Logout)
