@@ -41,7 +41,7 @@ def ensure_user_columns():
             conn.execute('ALTER TABLE users ADD COLUMN address TEXT')
             added = True
         
-        # Ensure cards table exists
+        # Ensure legacy cards table exists (some installations use this)
         try:
             conn.execute('PRAGMA table_info(cards)')
         except sqlite3.OperationalError:
@@ -53,6 +53,49 @@ def ensure_user_columns():
                     balance INTEGER NOT NULL,
                     created_at TEXT DEFAULT CURRENT_TIMESTAMP,
                     FOREIGN KEY (user_id) REFERENCES users (id)
+                )
+            ''')
+            added = True
+
+        # Ensure new bank_cards table exists (holds masked card number)
+        try:
+            cur = conn.execute('PRAGMA table_info(bank_cards)')
+            cols = [r['name'] for r in cur.fetchall()]
+        except sqlite3.OperationalError:
+            cols = []
+
+        if not cols:
+            conn.execute('''
+                CREATE TABLE bank_cards (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    user_id INTEGER NOT NULL,
+                    card_name TEXT NOT NULL,
+                    card_number TEXT NOT NULL,
+                    balance INTEGER NOT NULL,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    FOREIGN KEY (user_id) REFERENCES users (id)
+                )
+            ''')
+            added = True
+
+        # Ensure order_history table exists
+        try:
+            cur = conn.execute('PRAGMA table_info(order_history)')
+            oh_cols = [r['name'] for r in cur.fetchall()]
+        except sqlite3.OperationalError:
+            oh_cols = []
+
+        if not oh_cols:
+            conn.execute('''
+                CREATE TABLE order_history (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    user_id INTEGER NOT NULL,
+                    total_amount INTEGER NOT NULL,
+                    card_id INTEGER,
+                    card_name TEXT,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    FOREIGN KEY (user_id) REFERENCES users (id),
+                    FOREIGN KEY (card_id) REFERENCES bank_cards (id)
                 )
             ''')
             added = True
@@ -344,6 +387,11 @@ def profile():
     conn = get_db_connection()
     # Select only the fields we need
     user = conn.execute('SELECT id, name, email, phone, address, created_at FROM users WHERE id = ?', (session['user_id'],)).fetchone()
+
+    # Load bank cards for this user
+    cards = conn.execute('SELECT id, card_name, card_number, balance, created_at FROM bank_cards WHERE user_id = ? ORDER BY created_at DESC', (session['user_id'],)).fetchall()
+    cards = [dict(c) for c in cards] if cards else []
+
     conn.close()
 
     # If the user record does not exist (stale session), clear session and redirect to login
@@ -352,7 +400,52 @@ def profile():
         flash('Пайдаланушы табылмады. Қайта кіруіңізді сұраймыз.', 'warning')
         return redirect(url_for('login'))
 
-    return render_template('profile.html', user=user)
+    return render_template('profile.html', user=user, cards=cards)
+
+
+@app.route('/add_card', methods=['GET', 'POST'])
+def add_card():
+    # Require login
+    if 'user_id' not in session:
+        flash('Картаны қосу үшін алдымен кіріңіз!', 'warning')
+        return redirect(url_for('login'))
+
+    if request.method == 'POST':
+        card_name = request.form.get('card_name','').strip()
+        card_number_raw = request.form.get('card_number','').strip()
+        balance_raw = request.form.get('balance','').strip()
+
+        errors = []
+        if not card_name:
+            errors.append('Карта атауы қажет')
+        # Normalize digits only
+        digits = ''.join(ch for ch in card_number_raw if ch.isdigit())
+        if len(digits) < 4:
+            errors.append('Карта нөмірі кемінде 4 цифрдан тұруы керек')
+        try:
+            balance = int(balance_raw)
+            if balance < 0:
+                errors.append('Баланс теріс болмауы тиіс')
+        except Exception:
+            errors.append('Жарамды баланс көрсетіңіз')
+
+        if errors:
+            for e in errors:
+                flash(e, 'error')
+            return render_template('add_card.html', form={'card_name': card_name, 'card_number': card_number_raw, 'balance': balance_raw})
+
+        masked = '**** ' + digits[-4:]
+        conn = get_db_connection()
+        conn.execute('INSERT INTO bank_cards (user_id, card_name, card_number, balance) VALUES (?, ?, ?, ?)',
+                     (session['user_id'], card_name, masked, balance))
+        conn.commit()
+        conn.close()
+
+        flash('Карта сәтті қосылды', 'success')
+        return redirect(url_for('profile'))
+
+    # GET
+    return render_template('add_card.html')
 
 
 @app.route('/edit_profile', methods=['GET', 'POST'])
@@ -456,7 +549,16 @@ def checkout():
     ids = [int(k) for k in cart.keys()] if cart else []
     conn = get_db_connection()
     products = _get_products_by_ids(conn, ids) if ids else []
+    
+    # Load user data (always fresh from DB, not cached)
+    user = conn.execute('SELECT id, name, email, phone, address, created_at FROM users WHERE id = ?', 
+                       (session['user_id'],)).fetchone()
+    user_dict = dict(user) if user else {}
     conn.close()
+
+    # Check if user has address
+    if not user_dict.get('address'):
+        flash('Профильде мекенжай қосыңыз!', 'warning')
 
     # Attach quantities
     for p in products:
@@ -468,7 +570,8 @@ def checkout():
     # Delivery cost (fixed)
     delivery_cost = 1500
 
-    return render_template('checkout.html', products=products, cart_total=cart_total, delivery_cost=delivery_cost)
+    return render_template('checkout.html', products=products, cart_total=cart_total, 
+                         delivery_cost=delivery_cost, user=user_dict)
 
 
 @app.route('/payment')
@@ -488,8 +591,8 @@ def payment():
     conn = get_db_connection()
     products = _get_products_by_ids(conn, ids) if ids else []
     
-    # Get user's cards
-    cards = conn.execute('SELECT id, card_name, balance FROM cards WHERE user_id = ? ORDER BY created_at DESC', 
+    # Get user's bank cards (masked numbers)
+    cards = conn.execute('SELECT id, card_name, card_number, balance FROM bank_cards WHERE user_id = ? ORDER BY created_at DESC', 
                          (session['user_id'],)).fetchall()
     cards = [dict(c) for c in cards] if cards else []
     
@@ -530,8 +633,8 @@ def process_payment():
     delivery_cost = 1500
     total_amount = cart_total + delivery_cost
 
-    # Get the card
-    card = conn.execute('SELECT id, balance FROM cards WHERE id = ? AND user_id = ?', 
+    # Get the card from bank_cards
+    card = conn.execute('SELECT id, card_name, card_number, balance FROM bank_cards WHERE id = ? AND user_id = ?', 
                        (int(card_id), session['user_id'])).fetchone()
     
     if not card:
@@ -547,7 +650,15 @@ def process_payment():
 
     # Deduct from card balance
     new_balance = card_balance - total_amount
-    conn.execute('UPDATE cards SET balance = ? WHERE id = ?', (new_balance, card['id']))
+    conn.execute('UPDATE bank_cards SET balance = ? WHERE id = ?', (new_balance, card['id']))
+
+    # Record order history
+    try:
+        conn.execute('INSERT INTO order_history (user_id, total_amount, card_id, card_name) VALUES (?, ?, ?, ?)',
+                     (session['user_id'], total_amount, card['id'], card['card_name']))
+    except Exception:
+        # If order_history doesn't exist or insert fails, ignore to avoid blocking payment
+        pass
     
     # Clear session cart
     session['cart'] = {}

@@ -1,0 +1,40 @@
+{% extends 'base.html' %}
+
+{% block title %}Карта қосу — KazPrice{% endblock %}
+
+{% block content %}
+  <div class="py-4">
+    <div class="container">
+      <h3 class="mb-4">Жаңа карта қосу</h3>
+
+      <div class="row justify-content-center">
+        <div class="col-12 col-md-6">
+          <div class="card p-4">
+            <form method="post">
+              <div class="mb-3">
+                <label class="form-label">Карта атауы</label>
+                <input name="card_name" class="form-control" value="{{ form.card_name if form and form.card_name else '' }}" placeholder="Kaspi Gold">
+              </div>
+
+              <div class="mb-3">
+                <label class="form-label">Карта нөмірі</label>
+                <input name="card_number" class="form-control" value="{{ form.card_number if form and form.card_number else '' }}" placeholder="1234 5678 9012 3456">
+                <div class="small text-muted">Нөмірден біз тек соңғы 4 цифрды көрсетеміз.</div>
+              </div>
+
+              <div class="mb-3">
+                <label class="form-label">Бастапқы баланс (₸)</label>
+                <input name="balance" type="number" class="form-control" value="{{ form.balance if form and form.balance else '' }}">
+              </div>
+
+              <div class="d-flex justify-content-end gap-2">
+                <a href="{{ url_for('profile') }}" class="btn btn-outline-secondary">Болдырмау</a>
+                <button class="btn btn-primary">Қосу</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+{% endblock %}

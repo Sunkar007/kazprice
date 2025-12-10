@@ -20,11 +20,12 @@
                   <div class="form-check">
                     <input class="form-check-input" type="radio" name="card_id" id="card_{{ card.id }}" 
                            value="{{ card.id }}" {% if loop.first %}checked{% endif %} 
-                           data-balance="{{ card.balance }}">
+                           data-balance="{{ card.balance }}" data-card-number="{{ card.card_number }}">
                     <label class="form-check-label w-100" for="card_{{ card.id }}">
                       <div class="d-flex justify-content-between align-items-center">
                         <div>
                           <strong>{{ card.card_name }}</strong>
+                          <div class="text-muted small">Нөмір: {{ card.card_number }}</div>
                           <div class="text-muted small">Қолданылуы мүмкін: <span class="text-success">{{ '{:,.0f}'.format(card.balance) }}</span> ₸</div>
                         </div>
                       </div>
@@ -103,8 +104,9 @@
           const balance = parseInt(this.dataset.balance, 10);
           const cardId = this.value;
           const cardName = this.closest('.card').querySelector('strong').textContent;
+          const cardNumber = this.dataset.cardNumber || '';
           
-          selectedCardSpan.textContent = cardName;
+          selectedCardSpan.textContent = cardName + ' ' + cardNumber;
           
           // Check balance
           if(balance < totalAmount){

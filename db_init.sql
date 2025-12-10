@@ -67,3 +67,31 @@ VALUES
 (1, 'Kaspi Gold', 4300000),
 (1, 'Halyk Bank', 2100000),
 (1, 'BCC', 650000);
+
+-- New table for virtual bank cards (kept separate from legacy `cards`)
+CREATE TABLE IF NOT EXISTS bank_cards (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id INTEGER NOT NULL,
+    card_name TEXT NOT NULL,
+    card_number TEXT NOT NULL,
+    balance INTEGER NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES users (id)
+);
+
+INSERT INTO bank_cards (user_id, card_name, card_number, balance)
+VALUES
+(1, 'Kaspi Gold', '**** 4300', 4300000),
+(1, 'Halyk Bank', '**** 2100', 2100000);
+
+-- Order history to record payments
+CREATE TABLE IF NOT EXISTS order_history (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id INTEGER NOT NULL,
+    total_amount INTEGER NOT NULL,
+    card_id INTEGER,
+    card_name TEXT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES users (id),
+    FOREIGN KEY (card_id) REFERENCES bank_cards (id)
+);

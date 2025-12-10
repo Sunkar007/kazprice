@@ -53,7 +53,12 @@
           <div class="card p-4 mb-4">
             <h5 class="mb-3">Жеткізу мекенжайы</h5>
             <p class="mb-0 text-muted">Сіздің профильде тіркелген мекенжай:</p>
-            <p class="mb-0"><strong id="deliveryAddress">Мекенжай жүктелуде...</strong></p>
+            {% if user and user.address %}
+              <p class="mb-0"><strong>{{ user.address }}</strong></p>
+            {% else %}
+              <p class="mb-0 text-danger"><strong>Мекенжай қосылмағаң</strong></p>
+              <p class="small text-muted">Төлеуге өтпес бұрын мекенжай қосыңыз.</p>
+            {% endif %}
             <a href="{{ url_for('edit_profile') }}" class="btn btn-sm btn-outline-secondary mt-2">Өзгерту</a>
           </div>
         </div>
@@ -85,13 +90,4 @@
       </div>
     </div>
   </div>
-
-  <script>
-    // Load delivery address from profile (optional)
-    document.addEventListener('DOMContentLoaded', function(){
-      const addressEl = document.getElementById('deliveryAddress');
-      // For now, we'll just show a placeholder; you can fetch from /profile API if desired
-      addressEl.textContent = 'Профильде сохранен адрес';
-    });
-  </script>
 {% endblock %}
