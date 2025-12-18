@@ -56,7 +56,7 @@
             {% if user and user.address %}
               <p class="mb-0"><strong>{{ user.address }}</strong></p>
             {% else %}
-              <p class="mb-0 text-danger"><strong>Мекенжай қосылмағаң</strong></p>
+              <p class="mb-0 text-danger"><strong>Мекенжай қосылмаған</strong></p>
               <p class="small text-muted">Төлеуге өтпес бұрын мекенжай қосыңыз.</p>
             {% endif %}
             <a href="{{ url_for('edit_profile') }}" class="btn btn-sm btn-outline-secondary mt-2">Өзгерту</a>
@@ -66,10 +66,10 @@
         <!-- Order Total & Proceed -->
         <aside class="col-12 col-lg-4">
           <div class="card p-4 sticky-top" style="top: 20px;">
-            <h5>Төлем бұлтері</h5>
+            <h5>Төлем түрлері:</h5>
             <hr>
             <div class="d-flex justify-content-between mb-2">
-              <span>Өндіктер қосынды:</span>
+              <span>Өнімдер қосу:</span>
               <span id="subtotal">{{ '{:,.0f}'.format(cart_total) }}</span> ₸
             </div>
             <div class="d-flex justify-content-between mb-3 pb-3 border-bottom">
