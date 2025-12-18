@@ -11,7 +11,7 @@
         <div class="col-12 col-lg-8">
           <!-- Payment Methods -->
           <div class="card p-4 mb-4">
-            <h5 class="mb-4">Сохранённые карты</h5>
+            <h5 class="mb-4">Сақталған карталар</h5>
             
             {% if cards %}
               <form id="paymentForm">
@@ -36,24 +36,24 @@
               </form>
             {% else %}
               <div class="alert alert-warning" role="alert">
-                Сохраненных карт нет. <a href="{{ url_for('profile') }}">Картаны қосу</a>
+                Сақталған карталар жоқ. <a href="{{ url_for('profile') }}">Картаны қосу</a>
               </div>
             {% endif %}
           </div>
 
           <!-- Payment Info -->
           <div class="card p-4 mb-4 bg-light">
-            <h5 class="mb-3">Платёж детали</h5>
+            <h5 class="mb-3">Төлем мәліметтері:</h5>
             <div class="d-flex justify-content-between mb-2">
-              <span>Товары:</span>
+              <span>Тауарлар:</span>
               <span id="paymentSubtotal">{{ '{:,.0f}'.format(cart_total) }}</span> ₸
             </div>
             <div class="d-flex justify-content-between mb-3 pb-3 border-bottom">
-              <span>Доставка:</span>
+              <span>Жеткізу:</span>
               <span id="paymentDelivery">{{ '{:,.0f}'.format(delivery_cost) }}</span> ₸
             </div>
             <div class="d-flex justify-content-between">
-              <h5 class="mb-0">Итого к оплате:</h5>
+              <h5 class="mb-0">Төленетін алпы сомма:</h5>
               <h5 class="mb-0"><span id="paymentTotal">{{ '{:,.0f}'.format(total_amount) }}</span> ₸</h5>
             </div>
           </div>
@@ -62,15 +62,15 @@
         <!-- Order Summary & Pay Button -->
         <aside class="col-12 col-lg-4">
           <div class="card p-4 sticky-top" style="top: 20px;">
-            <h5 class="mb-4">Резюме заказа</h5>
+            <h5 class="mb-4">Тапсырыс мазмұны</h5>
             
             <div class="mb-3">
-              <small class="text-muted d-block mb-2">Выбранная карта:</small>
-              <span id="selectedCard" class="badge bg-primary">Выберите карту</span>
+              <small class="text-muted d-block mb-2">Таңдалған карта:</small>
+              <span id="selectedCard" class="badge bg-primary">Картаны таңдаңыз</span>
             </div>
 
             <div class="alert alert-info small" id="balanceWarning" style="display:none;">
-              ⚠️ На выбранной карте недостаточно средств
+              ⚠️ Таңдалған картада жеткілікті қаражат жоқ.
             </div>
 
             <div class="d-grid gap-2">
@@ -81,7 +81,7 @@
             </div>
 
             <small class="text-muted mt-3 d-block">
-              Төлем құрылымы арқылы өңделеді. Сіздің картасы көрсетілген.
+              Төлем құрылымы арқылы өңделеді. Сіздің картаңыз көрсетілген.
             </small>
           </div>
         </aside>
@@ -90,81 +90,102 @@
   </div>
 
   <script>
-    const totalAmount = { total_amount };
-    const payForm = document.getElementById('paymentForm');
-    const payButton = document.getElementById('payButton');
-    const selectedCardSpan = document.getElementById('selectedCard');
-    const balanceWarning = document.getElementById('balanceWarning');
+    document.addEventListener('DOMContentLoaded', function(){
+      const totalAmount = Number({{ total_amount }});
+      const payForm = document.getElementById('paymentForm');
+      const payButton = document.getElementById('payButton');
+      const selectedCardSpan = document.getElementById('selectedCard');
+      const balanceWarning = document.getElementById('balanceWarning');
 
-    // Handle card selection
-    if(payForm){
-      const cardInputs = payForm.querySelectorAll('input[name="card_id"]');
-      cardInputs.forEach(inp => {
-        inp.addEventListener('change', function(){
-          const balance = parseInt(this.dataset.balance, 10);
-          const cardId = this.value;
-          const cardName = this.closest('.card').querySelector('strong').textContent;
-          const cardNumber = this.dataset.cardNumber || '';
-          
-          selectedCardSpan.textContent = cardName + ' ' + cardNumber;
-          
-          // Check balance
-          if(balance < totalAmount){
-            balanceWarning.style.display = 'block';
-            payButton.disabled = true;
-          } else {
-            balanceWarning.style.display = 'none';
-            payButton.disabled = false;
-          }
-        });
-      });
+      // Ensure pay button starts disabled
+      if(payButton) payButton.disabled = true;
 
-      // Trigger initial check
-      const checkedCard = payForm.querySelector('input[name="card_id"]:checked');
-      if(checkedCard){
-        checkedCard.dispatchEvent(new Event('change'));
-      }
-    }
-
-    // Handle payment submission
-    payButton.addEventListener('click', function(e){
-      e.preventDefault();
-      
-      const selectedCardInput = payForm.querySelector('input[name="card_id"]:checked');
-      if(!selectedCardInput){
-        alert('Картасын таңдаңыз');
+      if(!payForm){
+        // No saved cards — keep pay button disabled
         return;
       }
 
-      const cardId = selectedCardInput.value;
-      payButton.disabled = true;
-      const originalText = payButton.querySelector('#payButtonText').textContent;
-      payButton.querySelector('#payButtonText').textContent = 'Өңделуде...';
+      // Delegate change events for radio inputs (robust for dynamic content)
+      payForm.addEventListener('change', function(e){
+        const target = e.target;
+        if(!target || target.name !== 'card_id') return;
 
-      fetch('/process_payment', {
-        method: 'POST',
-        headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify({card_id: cardId})
-      })
-      .then(r => r.json())
-      .then(data => {
-        if(data.status === 'success'){
-          // Show success and redirect
-          alert(data.message);
-          window.location.href = '{{ url_for("main") }}';
-        } else {
-          // Show error
-          alert('Қате: ' + (data.message || 'Төлем сәтсіз'));
-          payButton.disabled = false;
-          payButton.querySelector('#payButtonText').textContent = originalText;
+        const selected = payForm.querySelector('input[name="card_id"]:checked');
+        if(!selected){
+          if(payButton) payButton.disabled = true;
+          selectedCardSpan.textContent = 'Картаны таңдаңыз';
+          balanceWarning.style.display = 'none';
+          return;
         }
-      })
-      .catch(err => {
-        console.error(err);
-        alert('Төлем сәтсіз');
-        payButton.disabled = false;
-        payButton.querySelector('#payButtonText').textContent = originalText;
+
+        const balance = Number(selected.dataset.balance || 0);
+        const cardNameElem = selected.closest('.card') ? selected.closest('.card').querySelector('strong') : null;
+        const cardName = cardNameElem ? cardNameElem.textContent : 'Карта';
+        const cardNumber = selected.dataset.cardNumber || '';
+
+        selectedCardSpan.textContent = cardName + (cardNumber ? ' ' + cardNumber : '');
+
+        if(isNaN(balance) || balance < totalAmount){
+          balanceWarning.style.display = 'block';
+          if(payButton) payButton.disabled = true;
+        } else {
+          balanceWarning.style.display = 'none';
+          if(payButton) payButton.disabled = false;
+        }
       });
+
+      // Initial selection check
+      const initial = payForm.querySelector('input[name="card_id"]:checked');
+      if(initial){
+        // Manually trigger handler logic by dispatching a native event
+        initial.dispatchEvent(new Event('change', { bubbles: true }));
+      }
+
+      // Handle payment submission safely
+      if(payButton){
+        payButton.addEventListener('click', function(e){
+          e.preventDefault();
+          const selected = payForm.querySelector('input[name="card_id"]:checked');
+          if(!selected){
+            alert('Картаны таңдаңыз');
+            return;
+          }
+
+          const balance = Number(selected.dataset.balance || 0);
+          if(isNaN(balance) || balance < totalAmount){
+            alert('Таңдалған картада жеткіліксіз қаражат');
+            return;
+          }
+
+          const cardId = selected.value;
+          payButton.disabled = true;
+          const originalText = document.getElementById('payButtonText').textContent;
+          document.getElementById('payButtonText').textContent = 'Өңделуде...';
+
+          fetch('/process_payment', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({card_id: cardId})
+          })
+          .then(r => r.json())
+          .then(data => {
+            if(data.status === 'success'){
+              alert(data.message);
+              window.location.href = '{{ url_for("main") }}';
+            } else {
+              alert('Қате: ' + (data.message || 'Төлем сәтсіз'));
+              payButton.disabled = false;
+              document.getElementById('payButtonText').textContent = originalText;
+            }
+          })
+          .catch(err => {
+            console.error(err);
+            alert('Төлем сәтсіз');
+            payButton.disabled = false;
+            document.getElementById('payButtonText').textContent = originalText;
+          });
+        });
+      }
     });
   </script>
 {% endblock %}
